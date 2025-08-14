@@ -4,6 +4,7 @@
 # Puedes ejecutarlo directamente después de instalar Flask.
 
 from flask import Flask
+import os # Necesitas importar 'os' para acceder a las variables de entorno de Render.
 
 # 1. Crea una instancia de la aplicación Flask.
 app = Flask(__name__)
@@ -31,5 +32,7 @@ def list_routes():
 if __name__ == '__main__':
     # Llama a la función para listar las rutas.
     list_routes()
-    # La opción debug=True reinicia el servidor automáticamente cuando haces cambios en el código.
-    app.run(debug=True)
+    # Esta línea usa el puerto de Render si está disponible, o el 5000 en tu máquina.
+    # El debug=True es lo que permite la recarga automática de los cambios.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
