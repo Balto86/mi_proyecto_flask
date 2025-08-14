@@ -1,0 +1,7 @@
+# Contenido del archivo: requirements.txt
+#
+# Este archivo lista las dependencias necesarias para tu proyecto.
+# Instálalas con el comando: pip install -r requirements.txt
+
+# La única dependencia es Flask.
+Flask
