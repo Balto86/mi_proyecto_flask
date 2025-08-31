@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ titulo }}</h2>
+<form method="post">
+  {{ form.hidden_tag() }}
+  <p>
+    {{ form.nombre.label }}<br>
+    {{ form.nombre(size=40) }}
+    {% for err in form.nombre.errors %}<span>{{ err }}</span>{% endfor %}
+  </p>
+  <p>
+    {{ form.cantidad.label }}<br>
+    {{ form.cantidad() }}
+    {% for err in form.cantidad.errors %}<span>{{ err }}</span>{% endfor %}
+  </p>
+  <p>
+    {{ form.precio.label }}<br>
+    {{ form.precio() }}
+    {% for err in form.precio.errors %}<span>{{ err }}</span>{% endfor %}
+  </p>
+  <p>{{ form.submit() }}</p>
+</form>
+<a href="{{ url_for('lista_productos') }}">⬅ Volver</a>
+{% endblock %}
