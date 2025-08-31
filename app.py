@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
 from inventario.db import crear_tabla
 from inventario.models import Producto, Inventario
-from forms import ProductoForm
+from inventario.forms import ProductoForm
 
 app = Flask(__name__)
 app.secret_key = "CAMBIA-ESTA-CLAVE"
