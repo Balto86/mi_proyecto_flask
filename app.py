@@ -1,19 +1,27 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
-from inventario.db import crear_tabla
 from inventario.models import Producto, Inventario
-from inventario.forms import ProductoForm
+from forms import ProductoForm
 
 app = Flask(__name__)
-app.secret_key = "CAMBIA-ESTA-CLAVE"
+app.secret_key = "CAMBIA-ESTA-CLAVE"  # Cambia esta clave por seguridad
 
-# Inicializar DB y dominio
-crear_tabla()
+# Inicializar inventario
 inventario = Inventario()
 
+# ==============================
+# RUTAS PRINCIPALES
+# ==============================
 @app.route("/")
 def index():
     return render_template("index.html")
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+# ==============================
+# RUTAS PRODUCTOS
+# ==============================
 @app.route("/productos")
 def lista_productos():
     productos = inventario.listar_todos()
@@ -23,12 +31,11 @@ def lista_productos():
 def nuevo_producto():
     form = ProductoForm()
     if form.validate_on_submit():
-        # Generar ID único: busca el mayor y suma 1
         todos = inventario.listar_todos()
         nuevo_id = (max([p.id for p in todos]) + 1) if todos else 1
-        producto = Producto(nuevo_id, form.nombre.data, int(form.cantidad.data), float(form.precio.data))
+        p = Producto(nuevo_id, form.nombre.data, form.cantidad.data, form.precio.data)
         try:
-            inventario.agregar_producto(producto)
+            inventario.agregar_producto(p)
             flash("Producto agregado", "success")
             return redirect(url_for("lista_productos"))
         except Exception as e:
@@ -37,24 +44,18 @@ def nuevo_producto():
 
 @app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
 def editar_producto(id):
-    # obtener producto
-    productos = inventario.listar_todos()
-    p = next((x for x in productos if x.id == id), None)
+    p = next((x for x in inventario.listar_todos() if x.id == id), None)
     if not p:
         flash("Producto no encontrado", "warning")
         return redirect(url_for("lista_productos"))
     form = ProductoForm(obj=p)
     if form.validate_on_submit():
-        try:
-            inventario.actualizar_cantidad(id, int(form.cantidad.data))
-            inventario.actualizar_precio(id, float(form.precio.data))
-            # actualizar nombre manualmente en cache y BD
-            p.nombre = form.nombre.data
-            inventario._sync_a_db(p)  # método interno (si no quieres usar, crea método público)
-            flash("Producto actualizado", "success")
-            return redirect(url_for("lista_productos"))
-        except Exception as e:
-            flash(str(e), "danger")
+        p.nombre = form.nombre.data
+        p.cantidad = form.cantidad.data
+        p.precio = form.precio.data
+        inventario._sync_a_db(p)
+        flash("Producto actualizado", "success")
+        return redirect(url_for("lista_productos"))
     return render_template("productos/form.html", form=form, titulo="Editar Producto", producto=p)
 
 @app.route("/productos/eliminar/<int:id>", methods=["POST"])
@@ -66,5 +67,8 @@ def eliminar_producto(id):
         flash(str(e), "danger")
     return redirect(url_for("lista_productos"))
 
+# ==============================
+# EJECUTAR APP
+# ==============================
 if __name__ == "__main__":
     app.run(debug=True)
