@@ -4,26 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mi Proyecto Flask{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
-    <header>
-        <h1>Mi Proyecto Flask</h1>
-        <nav>
-            <a href="{{ url_for('index') }}">Inicio</a> |
-            <a href="{{ url_for('lista_productos') }}">Productos</a> |
-            <a href="{{ url_for('about') }}">Acerca de</a>
-        </nav>
-    </header>
-    <main>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-10 font-sans">
+    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg w-full max-w-4xl">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center text-gray-800">Sistema de Gestión</h1>
+            <nav class="mt-4 flex justify-center space-x-4 flex-wrap">
+                <!-- Navegación principal -->
+                <a href="{{ url_for('index') }}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 mb-2">Formulario Usuarios</a>
+                <a href="{{ url_for('ver_datos') }}" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300 mb-2">Ver Datos</a>
+                <a href="{{ url_for('lista_productos') }}" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 mb-2">Productos</a>
+                
+                <!-- APIs y Datos -->
+                <a href="{{ url_for('api_datos_txt') }}" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-300 mb-2">Datos TXT</a>
+                <a href="{{ url_for('api_datos_json') }}" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition duration-300 mb-2">Datos JSON</a>
+                <a href="{{ url_for('api_datos_csv') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300 mb-2">Datos CSV</a>
+                <a href="{{ url_for('api_datos_db') }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300 mb-2">Datos DB</a>
+                
+                <!-- Información -->
+                <a href="{{ url_for('about') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300 mb-2">Acerca de</a>
+            </nav>
+        </header>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, msg in messages %}
-                    <div class="alert alert-{{ category }}">{{ msg }}</div>
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ message }}
+                    </div>
                 {% endfor %}
-            {% endif %}
+            </div>
+        {% endif %}
         {% endwith %}
+
         {% block content %}{% endblock %}
-    </main>
+    </div>
 </body>
 </html>

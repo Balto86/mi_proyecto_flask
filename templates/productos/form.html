@@ -1,14 +1,48 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<h2>{{ titulo }}</h2>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <p>{{ form.nombre.label }} {{ form.nombre(size=32) }}</p>
-    <p>{{ form.cantidad.label }} {{ form.cantidad() }}</p>
-    <p>{{ form.precio.label }} {{ form.precio() }}</p>
-    <p>{{ form.submit() }}</p>
-</form>
+<div class="max-w-2xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">{{ titulo }}</h2>
+    
+    <form method="POST" class="bg-white p-8 rounded-lg shadow-md">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-4">
+            {{ form.nombre.label(class="block text-gray-700 font-medium mb-2") }}
+            {{ form.nombre(class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+            {% for error in form.nombre.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        
+        <div class="mb-4">
+            {{ form.cantidad.label(class="block text-gray-700 font-medium mb-2") }}
+            {{ form.cantidad(class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+            {% for error in form.cantidad.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        
+        <div class="mb-6">
+            {{ form.precio.label(class="block text-gray-700 font-medium mb-2") }}
+            {{ form.precio(class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+            {% for error in form.precio.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        
+        <div class="flex justify-between">
+            <a href="{{ url_for('lista_productos') }}" 
+               class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300">
+                Cancelar
+            </a>
+            <button type="submit" 
+                    class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300">
+                Guardar Producto
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

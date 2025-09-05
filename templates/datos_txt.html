@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Datos en TXT{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Datos almacenados en formato TXT</h2>
+    
+    <div class="bg-gray-100 p-6 rounded-lg mb-6">
+        <a href="{{ url_for('descargar_datos', formato='txt') }}" 
+           class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 mb-4 inline-block">
+            Descargar TXT
+        </a>
+        
+        <pre class="bg-white p-4 rounded-lg overflow-auto max-h-96">{{ contenido }}</pre>
+    </div>
+    
+    <a href="{{ url_for('ver_datos') }}" 
+       class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300">
+        Volver a Ver Datos
+    </a>
+</div>
+{% endblock %}

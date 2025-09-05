@@ -1,31 +1,66 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Productos{% endblock %}
+{% block title %}Lista de Productos{% endblock %}
 
 {% block content %}
-<h2>Lista de Productos</h2>
-<a href="{{ url_for('nuevo_producto') }}">Agregar Nuevo Producto</a>
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Cantidad</th>
-        <th>Precio</th>
-        <th>Acciones</th>
-    </tr>
-    {% for p in productos %}
-    <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.nombre }}</td>
-        <td>{{ p.cantidad }}</td>
-        <td>{{ p.precio }}</td>
-        <td>
-            <a href="{{ url_for('editar_producto', id=p.id) }}">Editar</a>
-            <form action="{{ url_for('eliminar_producto', id=p.id) }}" method="POST" style="display:inline;">
-                <button type="submit">Eliminar</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Gestión de Productos</h2>
+        <a href="{{ url_for('nuevo_producto') }}" 
+           class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300">
+            Agregar Producto
+        </a>
+    </div>
+
+    {% if productos %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for producto in productos %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ producto.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ producto.nombre }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ producto.cantidad }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ "%.2f"|format(producto.precio) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{{ url_for('editar_producto', id=producto.id) }}" 
+                           class="text-blue-600 hover:text-blue-900 mr-3">Editar</a>
+                        <form action="{{ url_for('eliminar_producto', id=producto.id) }}" method="POST" class="inline">
+                            <button type="submit" class="text-red-600 hover:text-red-900" 
+                                    onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?')">
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-16" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">No hay productos en el inventario</h3>
+        <p class="text-gray-500">Comienza agregando tu primer producto.</p>
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{{ url_for('index') }}" 
+           class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300">
+            Volver al Inicio
+        </a>
+    </div>
+</div>
 {% endblock %}
