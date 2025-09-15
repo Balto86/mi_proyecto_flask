@@ -1,9 +1,17 @@
+# Importaciones necesarias
+import os
+import io
+import csv
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 import json
-import csv
-import os
-import sqlite3
 from datetime import datetime
+import sqlite3
+import mysql.connector
+from dotenv import load_dotenv
+from mysql.connector import Error
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'clave-secreta-aqui'  # Cambia esto en producción
@@ -35,7 +43,33 @@ except ImportError:
     inventario_disponible = False
     print("Advertencia: Módulos de inventario no disponibles")
 
-# Inicializar base de datos de usuarios
+# Clase para gestionar la conexión a MySQL
+class DBManager:
+    def __init__(self):
+        self.conn = None
+
+    def get_connection(self):
+        try:
+            self.conn = mysql.connector.connect(
+                host=os.getenv("MYSQL_HOST"),
+                user=os.getenv("MYSQL_USER"),
+                password=os.getenv("MYSQL_PASSWORD"),
+                database=os.getenv("MYSQL_DB"),
+                port=int(os.getenv("MYSQL_PORT"))
+            )
+            return self.conn
+        except mysql.connector.Error as err:
+            print(f"Error de conexión a MySQL: {err}")
+            return None
+
+    def close_connection(self):
+        if self.conn and self.conn.is_connected():
+            self.conn.close()
+            print("Conexión a MySQL cerrada.")
+
+db_manager = DBManager()
+
+# Inicializar base de datos de usuarios (SQLite)
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -53,7 +87,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Inicializar base de datos de productos
+# Inicializar base de datos de productos (SQLite)
 def init_productos_db():
     conn = sqlite3.connect(PRODUCTOS_DB)
     cursor = conn.cursor()
@@ -70,8 +104,96 @@ def init_productos_db():
     conn.close()
 
 # ==========================
-# FUNCIONES PARA PERSISTENCIA DE USUARIOS
+# FUNCIONES PARA PERSISTENCIA DE USUARIOS (MySQL)
 # ==========================
+
+def create_mysql_tables():
+    print("Verificando y creando tablas en MySQL...")
+    try:
+        conn = db_manager.get_connection()
+        if conn:
+            cursor = conn.cursor()
+            # Se crea la tabla 'usuarios'
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                edad INT,
+                pais VARCHAR(255),
+                intereses TEXT,
+                fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
+            # Se crea la tabla 'productos_mysql'
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS productos_mysql (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(255) NOT NULL,
+                cantidad INT NOT NULL,
+                precio DECIMAL(10, 2) NOT NULL
+            )
+            """)
+            conn.commit()
+            cursor.close()
+            db_manager.close_connection()
+            print("✅ Tablas de MySQL verificadas/creadas correctamente.")
+    except Error as e:
+        print(f"❌ Error al crear tablas en MySQL: {e}")
+
+def guardar_mysql_db(datos):
+    try:
+        conn = db_manager.get_connection()
+        if conn:
+            cursor = conn.cursor()
+            # Se inserta en la tabla 'usuarios' y se usan las columnas correctas
+            cursor.execute('''
+                INSERT INTO usuarios (nombre, email, edad, pais, intereses)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (datos['nombre'], datos['email'], datos['edad'], datos['pais'], datos['intereses']))
+            conn.commit()
+            cursor.close()
+            db_manager.close_connection()
+            return True
+    except Error as e:
+        print(f"Error guardando en MySQL: {e}")
+        return False
+
+# Rutas API para MySQL
+@app.route('/api/mysql/usuarios')
+def api_mysql_usuarios():
+    conn = None
+    try:
+        conn = db_manager.get_connection()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            # Se consulta la tabla 'usuarios'
+            cursor.execute("SELECT * FROM usuarios ORDER BY fecha_registro DESC")
+            usuarios = cursor.fetchall()
+            cursor.close()
+            db_manager.close_connection()
+            return jsonify(usuarios)
+    except Error as e:
+        print(f"Error obteniendo usuarios de MySQL: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+    return jsonify([])
+
+# ==========================
+# RUTAS DE LA APLICACIÓN - USUARIOS
+# ==========================
+
+@app.route('/test_db')
+def test_db():
+    conn = db_manager.get_connection()
+    if conn:
+        conn.close()
+        return "✅ ¡Conexión a la base de datos MySQL exitosa! Ahora puedes acceder a http://localhost:5000"
+    else:
+        return "❌ Error al conectar a la base de datos MySQL. Por favor, revisa tus credenciales."
+
 
 def guardar_txt(datos):
     try:
@@ -203,7 +325,7 @@ def guardar_producto_txt(producto):
         productos_txt = os.path.join(DATOS_DIR, 'productos.txt')
         with open(productos_txt, 'a', encoding='utf-8') as f:
             f.write(f"{datetime.now()}: ID={producto.id}, Nombre={producto.nombre}, "
-                   f"Cantidad={producto.cantidad}, Precio={producto.precio}\n")
+                    f"Cantidad={producto.cantidad}, Precio={producto.precio}\n")
         return True
     except Exception as e:
         print(f"Error guardando producto en TXT: {e}")
@@ -541,10 +663,49 @@ def eliminar_producto(id):
 def about():
     return render_template('about.html')
 
-# Inicializar la aplicación
+# Otras rutas de depuración
+@app.route('/health')
+def health_check():
+    """Endpoint de verificación de salud"""
+    conn = db_manager.get_connection()
+    mysql_status = "✅ Conectado" if conn else "❌ No conectado"
+    if conn: conn.close()
+    
+    info = {
+        "status": "ok",
+        "mysql_status": mysql_status,
+        "sqlite_db_exists": os.path.exists(DB_FILE),
+        "timestamp": datetime.now().isoformat()
+    }
+    return jsonify(info)
+
+# ==========================
+# INICIALIZACIÓN
+# ==========================
 if __name__ == '__main__':
+    print("🔄 Inicializando bases de datos...")
+    
+    # SQLite
     init_db()
     init_productos_db()
-    print("Bases de datos inicializadas correctamente")
-    print("Ejecutando aplicación en http://localhost:5000")
-    app.run(debug=True, port=5000)
+    print("✅ SQLite inicializado")
+    
+    # MySQL
+    create_mysql_tables()
+    
+    print("\n🎯 URLs importantes:")
+    print("   http://localhost:5000/ - Formulario principal")
+    print("   http://localhost:5000/ver-datos - Ver datos SQLite")
+    print("   http://localhost:5000/api/mysql/usuarios - API MySQL usuarios")
+    print("   http://localhost:5000/test_db - Probar conexión MySQL")
+    print("   http://localhost:5000/health - Verificar estado")
+    print("\n🚀 Servidor iniciando...")
+    
+    # Configuración para desarrollo
+    app.run(
+        debug=True, 
+        host='0.0.0.0', 
+        port=5000,
+        use_reloader=False, # Cambiado a False para evitar la doble inicialización
+        threaded=True
+    )
