@@ -1,139 +1,237 @@
 /* ============================
-   ESTILOS GENERALES
+    PALETA DE COLORES
+============================ */
+:root {
+    --primary-color: #4a90e2;  /* Azul brillante para acciones principales */
+    --secondary-color: #50e3c2; /* Un toque de color secundario */
+    --dark-color: #2c3e50;    /* Azul oscuro para el texto y fondo de header */
+    --light-color: #ecf0f1;   /* Gris claro para el fondo */
+    --white-color: #ffffff;
+    --border-color: #e0e6ed;
+}
+
+/* ============================
+    ESTILOS GENERALES
 ============================ */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f4f4f9;
-    color: #333;
+    background: var(--light-color);
+    color: var(--dark-color);
+    line-height: 1.6;
 }
 
 .container {
     width: 90%;
-    max-width: 1000px;
-    margin: 20px auto;
+    max-width: 1200px; /* Aumentar el ancho máximo para pantallas más grandes */
+    margin: 30px auto;
+    padding: 20px;
 }
 
 /* ============================
-   HEADER Y NAVBAR
+    HEADER Y NAVBAR
 ============================ */
 header {
-    background: #333;
-    color: white;
-    padding: 15px 20px;
-    text-align: center;
+    background: var(--dark-color);
+    color: var(--white-color);
+    padding: 20px 30px;
+    display: flex; /* Usar flexbox para mejor alineación */
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* Sombra para profundidad */
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin: 0;
 }
 
 nav {
-    margin-top: 10px;
+    display: flex;
+    gap: 25px; /* Espacio entre los links */
 }
 
 nav a {
-    color: white;
-    margin: 0 10px;
+    color: var(--white-color);
     text-decoration: none;
-    font-weight: bold;
-    transition: color 0.2s;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 nav a:hover {
-    color: #ffcc00;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--secondary-color);
 }
 
 /* ============================
-   TABLAS
+    SECCIONES DE CONTENIDO
+============================ */
+.section-card {
+    background: var(--white-color);
+    padding: 30px;
+    margin: 25px 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.section-card h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* ============================
+    TABLAS
 ============================ */
 table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
-    background: white;
-    border-radius: 5px;
+    background: var(--white-color);
+    border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 table th, table td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: center;
+    padding: 15px;
+    text-align: left; /* Alineación a la izquierda para mejor lectura */
+    border-bottom: 1px solid var(--border-color);
 }
 
 table th {
-    background: #333;
-    color: white;
+    background: var(--dark-color);
+    color: var(--white-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9rem;
 }
 
 table tr:nth-child(even) {
-    background: #f9f9f9;
+    background: #f8f9fa;
+}
+
+/* Mejoras para la tabla en móviles */
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    tr { border: 1px solid var(--border-color); }
+    td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+    }
+    td:before {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+    }
 }
 
 /* ============================
-   FORMULARIOS
+    FORMULARIOS
 ============================ */
-form {
-    background: white;
-    padding: 20px;
+.form-grid {
+    background: var(--white-color);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-grid label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #444;
+}
+
+.form-grid input, .form-grid select, .form-grid textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    outline: none;
+}
+
+.form-grid button, .btn {
+    background: var(--primary-color);
+    color: var(--white-color);
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 20px;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.form-grid button:hover, .btn:hover {
+    background: #3a7bd5;
+    transform: translateY(-2px);
+}
+
+.edit-btn { background-color: #ff9800; }
+.edit-btn:hover { background-color: #e68a00; }
+.delete-btn { background-color: #f44336; }
+.delete-btn:hover { background-color: #d32f2f; }
+.download-btn { background-color: #4caf50; }
+.download-btn:hover { background-color: #388e3c; }
+
+
+/* ============================
+    MENSAJES FLASH
+============================ */
+.flashes {
+    margin: 20px 0;
+}
+
+.alert {
+    padding: 15px 20px;
+    margin-bottom: 15px;
     border-radius: 8px;
+    font-weight: 500;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-form label {
-    display: block;
-    margin-top: 10px;
-    font-weight: bold;
-}
-
-form input, form select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-form button, .btn {
-    background: #333;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 15px;
-    transition: background 0.2s;
-}
-
-form button:hover, .btn:hover {
-    background: #555;
-}
-
-/* ============================
-   MENSAJES FLASH
-============================ */
-.flash-success {
-    background: #d4edda;
+.alert-success {
+    background-color: #d4edda;
     color: #155724;
-    padding: 10px;
-    margin: 10px 0;
     border: 1px solid #c3e6cb;
-    border-radius: 5px;
 }
 
-.flash-danger {
-    background: #f8d7da;
+.alert-error {
+    background-color: #f8d7da;
     color: #721c24;
-    padding: 10px;
-    margin: 10px 0;
     border: 1px solid #f5c6cb;
-    border-radius: 5px;
 }
-
-.flash-warning {
-    background: #fff3cd;
-    color: #856404;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ffeeba;
-    border-radius: 5px;
-}
-

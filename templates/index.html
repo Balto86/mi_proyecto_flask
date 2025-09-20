@@ -1,8 +1,115 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Inicio{% endblock %}
+{% block title %}Inicio - Mi App{% endblock %}
 
 {% block content %}
-<h2>Bienvenido a mi aplicación Flask</h2>
-<p>Esta es la página principal.</p>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Columna 1: Formulario de Login -->
+    <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Iniciar Sesión</h2>
+            
+            {% if login_error %}
+                <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
+                    {{ login_error }}
+                </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
+                    <input type="text" name="nombre" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           value="{{ request.form.nombre if request.form }}">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña:</label>
+                    <input type="password" name="password" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Iniciar Sesión
+                </button>
+            </form>
+            
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-semibold mb-2">¿No tienes cuenta?</h3>
+                <a href="{{ url_for('registro') }}" class="block w-full bg-green-600 text-white py-2 rounded-lg text-center hover:bg-green-700 transition">
+                    Crear Cuenta
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna 2: Productos -->
+    <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Productos</h2>
+            
+            {% if productos %}
+            <div class="space-y-3">
+                {% for producto in productos[:5] %}
+                <div class="border-b pb-3">
+                    <h4 class="font-semibold">{{ producto.nombre }}</h4>
+                    <p class="text-sm text-gray-600">Cantidad: {{ producto.cantidad }} | Precio: ${{ producto.precio }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-600 text-center">No hay productos registrados</p>
+            {% endif %}
+            
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('lista_productos') }}" class="text-blue-600 hover:underline">
+                    Ver todos los productos →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna 3: Usuarios Registrados -->
+    <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Usuarios Registrados</h2>
+            
+            {% if usuarios %}
+            <div class="space-y-3">
+                {% for usuario in usuarios[:5] %}
+                <div class="border-b pb-3">
+                    <h4 class="font-semibold">{{ usuario.nombre }}</h4>
+                    <p class="text-sm text-gray-600">{{ usuario.mail }}</p>
+                    <p class="text-xs text-gray-500">Registrado: {{ usuario.fecha_registro }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-600 text-center">No hay usuarios registrados</p>
+            {% endif %}
+            
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('ver_datos') }}" class="text-blue-600 hover:underline">
+                    Ver todos los usuarios →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-blue-100 p-4 rounded-lg text-center">
+        <h3 class="text-2xl font-bold text-blue-800">{{ productos|length }}</h3>
+        <p class="text-blue-600">Productos</p>
+    </div>
+    <div class="bg-green-100 p-4 rounded-lg text-center">
+        <h3 class="text-2xl font-bold text-green-800">{{ usuarios|length }}</h3>
+        <p class="text-green-600">Usuarios</p>
+    </div>
+    <div class="bg-purple-100 p-4 rounded-lg text-center">
+        <h3 class="text-2xl font-bold text-purple-800">MySQL</h3>
+        <p class="text-purple-600">Base de Datos</p>
+    </div>
+</div>
 {% endblock %}

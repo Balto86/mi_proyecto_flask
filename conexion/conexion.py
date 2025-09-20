@@ -1,4 +1,3 @@
-
 def crear_tablas():
     # 1. Crear una instancia de la clase DBManager
     db_manager = DBManager()
