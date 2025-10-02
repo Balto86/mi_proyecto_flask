@@ -1,15 +1,14 @@
 # Importaciones necesarias
 import os
-import io
 import csv
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import json
 from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import mysql.connector
-from dotenv import load_dotenv
 from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -25,8 +24,6 @@ login_manager.login_view = 'login'
 # Configuración de directorios
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATOS_DIR = os.path.join(BASE_DIR, 'datos')
-
-# Crear directorios si no existen
 os.makedirs(DATOS_DIR, exist_ok=True)
 
 # Rutas de archivos
@@ -114,7 +111,21 @@ def create_mysql_tables():
                     nombre VARCHAR(255) NOT NULL,
                     costo DECIMAL(10, 2) NOT NULL,
                     descripcion TEXT,
-                    stock INT NOT NULL DEFAULT 0
+                    stock INT NOT NULL DEFAULT 0,
+                    id_usuario_creador INT,
+                    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_usuario_creador) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS usuario_producto (
+                    id_relacion INT AUTO_INCREMENT PRIMARY KEY,
+                    id_usuario INT NOT NULL,
+                    id_producto INT NOT NULL,
+                    fecha_asociacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+                    FOREIGN KEY (id_producto) REFERENCES producto(id_producto) ON DELETE CASCADE,
+                    UNIQUE KEY unique_usuario_producto (id_usuario, id_producto)
                 )
             """)
             conn.commit()
@@ -162,7 +173,7 @@ def verificar_usuario(mail, password):
         print(f"Error verificando usuario: {e}")
     return None
 
-# Funciones para persistencia de datos (mantienen la lógica original)
+# Funciones para persistencia de datos
 def guardar_txt(datos):
     try:
         with open(TXT_FILE, 'a', encoding='utf-8') as f:
@@ -212,7 +223,6 @@ def leer_json():
         if os.path.exists(JSON_FILE):
             with open(JSON_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Ordenar los datos por fecha_registro descendente
                 return sorted(data, key=lambda x: x.get('fecha_registro', ''), reverse=True)
         return []
     except Exception as e:
@@ -249,13 +259,11 @@ def leer_csv():
                 reader = csv.DictReader(f)
                 for row in reader:
                     datos.append(row)
-            # Ordenar los datos por fecha_registro descendente
             return sorted(datos, key=lambda x: x.get('fecha_registro', ''), reverse=True)
         return []
     except Exception as e:
         print(f"Error leyendo CSV: {e}")
         return []
-
 
 # ==========================
 # RUTAS DE AUTENTICACIÓN
@@ -330,7 +338,7 @@ def logout():
     return redirect(url_for('login'))
 
 # ==========================
-# RUTA ÚNICA DEL DASHBOARD (CONSOLIDADA)
+# RUTA ÚNICA DEL DASHBOARD
 # ==========================
 
 @app.route('/')
@@ -347,14 +355,19 @@ def dashboard():
             cursor.execute("SELECT id_usuario, nombre, mail, fecha_registro FROM usuarios ORDER BY fecha_registro DESC")
             datos_dashboard['usuarios'] = cursor.fetchall()
             
-            # Datos de Productos (MySQL)
-            cursor.execute("SELECT * FROM producto ORDER BY nombre")
+            # Datos de Productos con información del creador
+            cursor.execute("""
+                SELECT p.*, u.nombre as nombre_creador 
+                FROM producto p 
+                LEFT JOIN usuarios u ON p.id_usuario_creador = u.id_usuario 
+                ORDER BY p.nombre
+            """)
             datos_dashboard['productos'] = cursor.fetchall()
             
             cursor.close()
             db_manager.close_connection()
             
-        # Leer datos de los archivos locales (ahora ordenados dentro de las funciones)
+        # Leer datos de los archivos locales
         datos_dashboard['datos_txt'] = leer_txt()
         datos_dashboard['datos_json'] = leer_json()
         datos_dashboard['datos_csv'] = leer_csv()
@@ -364,7 +377,6 @@ def dashboard():
     except Error as e:
         print(f"Error al cargar el dashboard: {e}")
         flash('Error al cargar la información del dashboard.', 'error')
-        # Retorna un dashboard con datos vacíos en caso de error
         return render_template('auth/dashboard.html', 
                              usuarios=[], 
                              productos=[], 
@@ -419,7 +431,10 @@ def procesar_formulario():
         flash('Error interno al procesar el formulario', 'error')
         return redirect(url_for('dashboard'))
 
-# Rutas para productos
+# ==========================
+# RUTAS PARA PRODUCTOS
+# ==========================
+
 @app.route('/productos/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_producto():
@@ -434,9 +449,9 @@ def nuevo_producto():
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO producto (nombre, costo, descripcion, stock)
-                    VALUES (%s, %s, %s, %s)
-                ''', (nombre, costo, descripcion, stock))
+                    INSERT INTO producto (nombre, costo, descripcion, stock, id_usuario_creador)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (nombre, costo, descripcion, stock, current_user.id))
                 conn.commit()
                 cursor.close()
                 db_manager.close_connection()
@@ -526,23 +541,70 @@ def eliminar_producto_dashboard(id):
     
     return redirect(url_for('dashboard'))
 
-@app.route('/descargar/<formato>')
+# ==========================
+# RUTAS PARA RELACIONES USUARIO-PRODUCTO
+# ==========================
+
+@app.route('/asociar_producto/<int:id_producto>', methods=['POST'])
 @login_required
-def descargar_datos(formato):
+def asociar_producto(id_producto):
     try:
-        if formato == 'txt':
-            return send_file(TXT_FILE, as_attachment=True, download_name='datos.txt')
-        elif formato == 'json':
-            return send_file(JSON_FILE, as_attachment=True, download_name='datos.json')
-        elif formato == 'csv':
-            return send_file(CSV_FILE, as_attachment=True, download_name='datos.csv')
-        else:
-            flash('Formato no válido', 'error')
-            return redirect(url_for('dashboard'))
-    except Exception as e:
-        print(f"Error descargando {formato}: {e}")
-        flash(f'Error al descargar el archivo {formato}', 'error')
+        conn = db_manager.get_connection()
+        if conn:
+            cursor = conn.cursor()
+            # Verificar si el producto existe
+            cursor.execute("SELECT id_producto FROM producto WHERE id_producto = %s", (id_producto,))
+            if not cursor.fetchone():
+                flash('El producto no existe.', 'error')
+                return redirect(url_for('dashboard'))
+            
+            # Insertar la relación
+            cursor.execute('''
+                INSERT INTO usuario_producto (id_usuario, id_producto)
+                VALUES (%s, %s)
+            ''', (current_user.id, id_producto))
+            conn.commit()
+            cursor.close()
+            db_manager.close_connection()
+            
+            flash('Producto asociado a tu cuenta correctamente.', 'success')
+    except mysql.connector.IntegrityError:
+        flash('Este producto ya está asociado a tu cuenta.', 'info')
+    except Error as e:
+        print(f"Error asociando producto: {e}")
+        flash('Error al asociar el producto.', 'error')
+    
+    return redirect(url_for('dashboard'))
+
+@app.route('/mis_productos')
+@login_required
+def mis_productos():
+    try:
+        conn = db_manager.get_connection()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT p.*, up.fecha_asociacion 
+                FROM producto p
+                INNER JOIN usuario_producto up ON p.id_producto = up.id_producto
+                WHERE up.id_usuario = %s
+                ORDER BY up.fecha_asociacion DESC
+            """, (current_user.id,))
+            productos_asociados = cursor.fetchall()
+            cursor.close()
+            db_manager.close_connection()
+            
+            return render_template('auth/mis_productos.html', 
+                                 productos=productos_asociados,
+                                 usuario=current_user)
+    except Error as e:
+        print(f"Error obteniendo productos del usuario: {e}")
+        flash('Error al cargar tus productos.', 'error')
         return redirect(url_for('dashboard'))
+
+# ==========================
+# RUTAS ADICIONALES
+# ==========================
 
 @app.route('/perfil')
 @login_required
@@ -576,6 +638,10 @@ def test_db():
     else:
         return "❌ Error al conectar a la base de datos MySQL."
 
+# ==========================
+# INICIALIZACIÓN DE LA APLICACIÓN
+# ==========================
+
 if __name__ == '__main__':
     print("🔄 Inicializando base de datos MySQL...")
     create_mysql_tables()
@@ -584,6 +650,7 @@ if __name__ == '__main__':
     print("   http://localhost:5000/login - Iniciar sesión")
     print("   http://localhost:5000/registro - Registrarse")
     print("   http://localhost:5000/ - Dashboard principal")
+    print("   http://localhost:5000/mis_productos - Mis productos asociados")
     print("\n🚀 Servidor iniciando...")
     
     app.run(
